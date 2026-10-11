@@ -1639,7 +1639,10 @@ async function openProfile(who: { id?: string; handle?: string; code?: string })
   profileOf = prof;
   $('acctModal').hidden = true; $('profileModal').hidden = false;
   avaInto($('pfAva'), initial(prof), prof.avatar_path);
-  $('pfName').textContent = cloud.labelOf(prof); $('pfHandle').textContent = prof.username ? '@' + prof.username : '';
+  $('pfName').textContent = cloud.labelOf(prof); $('pfHandle').textContent = [prof.username ? '@' + prof.username : '', cloud.joinedText(prof.joined)].filter(Boolean).join(' · ');
+  // the full page opens by username; without one, only people in the gallery or with public photos can be opened by id
+  const page = $('pfPage') as HTMLAnchorElement; page.hidden = !(prof.username || prof.photos);
+  page.href = '/u/' + (prof.username || prof.id);
   $('pfBio').textContent = prof.bio ?? ''; $('pfBio').hidden = !prof.bio;
   $('pfStats').innerHTML = ''; for (const [n, one, many] of [[prof.photos, 'photo', 'photos'], [prof.stories, 'story', 'stories'], [prof.followers, 'follower', 'followers'], [prof.following, 'following', 'following']] as const) { if (n === undefined) continue; const s = el('span'); s.append(el('b', '', String(n)), ' ' + (n === 1 ? one : many)); $('pfStats').append(s); }
   drawSummary($('pfSummary'), null); drawHighlights($('pfHighlights'), [], () => {});
@@ -1693,7 +1696,7 @@ async function drawProfileStories(prof: cloud.Profile, mine: boolean) {
       for (const c of pub.cards) if (c.trip) (m2.get(c.trip) ?? m2.set(c.trip, []).get(c.trip)!).push(c);
       list = [...m2.entries()].map(([name, cs]) => ({ name, owner: prof.id, cards: cs.sort((a, b) => a.seq - b.seq) }));
     } catch { list = []; }
-    if (!list.length) { box.append(el('p', 'hint', `${cloud.labelOf(prof)} hasn’t made any stories public. Follow them to see what they share with friends.`)); return; }
+    if (!list.length) { box.append(el('p', 'hint', `${cloud.labelOf(prof)} hasn’t pinned any public stories yet. Follow them to see what they share with friends.`)); return; }
     box.append(el('p', 'hint', 'Public stories. Follow to see what they share with friends too.'));
   }
   if (!list.length) { box.append(el('p', 'hint', mine ? 'Nothing shared yet. Set a story to Friends or Public.' : 'Nothing shared yet.')); return; }

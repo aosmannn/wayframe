@@ -40,7 +40,8 @@ async function main() {
   const stories = new Map<string, Card[]>();
   for (const c of cards) if (c.trip) (stories.get(c.trip) ?? stories.set(c.trip, []).get(c.trip)!).push(c);
   const txt = el('div', 'grow'); txt.append(el('h1', '', name));
-  if (card?.username) txt.append(el('p', 'sub', '@' + card.username));
+  const sub = [card?.username ? '@' + card.username : '', cloud.joinedText(card?.joined)].filter(Boolean).join(' · ');
+  if (sub) txt.append(el('p', 'sub', sub));
   const stats = el('div', 'ig-stats');
   const word = (n: number, one: string, many: string) => n === 1 ? one : many;
   for (const [n, one, many] of [[card?.photos ?? cards.length, 'photo', 'photos'], [card?.stories ?? stories.size, 'story', 'stories'], [card?.followers, 'follower', 'followers'], [card?.following, 'following', 'following']] as const) {
@@ -73,7 +74,19 @@ async function main() {
     drawHighlights(hlBox, x.shots, (sh, all) => openLightbox(all.map(a => ({ ...cards[0], id: a.id, title: a.title, place: a.place, img: a.url, story: '', trip: '', seq: 0 })), all.indexOf(sh), new Map([[cards[0]?.owner ?? id, name]]), { storyLink: false }));
   });
 
-  if (!cards.length) { const e = el('div', 'empty'); e.append(el('h2', '', 'Nothing public yet'), el('p', '', `${name} hasn't made any photos public.`)); root.append(e); return; }
+  if (!cards.length) {
+    // a new or private profile: say who they are and what to do next, instead of only "nothing here"
+    const mine = !!id && me?.id === id;
+    const since = card?.joined ? ` since ${new Date(card.joined).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}` : '';
+    const e = el('div', 'empty');
+    if (mine) {
+      e.append(el('h2', '', 'Your map is waiting'), el('p', '', 'Photos you set to Public show up here for anyone with your link.'));
+      const a = el('a', 'btn primary', 'Add photos'); a.href = '/app.html'; e.append(a);
+    } else {
+      e.append(el('h2', '', 'No public photos yet'), el('p', '', `${name} has been on Wayframe${since} and hasn't pinned any public photos yet.` + (me ? ' Follow them to see what they share with friends.' : '')));
+    }
+    root.append(e); return;
+  }
 
   // Photos, Stories and Map are tabs, so the page opens on the photos instead of a huge map
   const placed = cards.filter(c => c.lat != null && c.lng != null);

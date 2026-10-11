@@ -55,11 +55,13 @@ export async function signOut() { await sb?.auth.signOut(); }
 /** username is null unless the person chose to be discoverable (or it's you). */
 export interface Person { id: string; display_name: string; username: string | null }
 export interface MyProfile extends Person { discoverable: boolean; invite_code: string; gallery: boolean; default_visibility: Card['visibility']; bio: string; avatar_path: string | null }
-export interface Profile extends Person { discoverable: boolean; bio?: string; avatar_path?: string | null; followers?: number; following?: number; photos?: number; stories?: number }
+export interface Profile extends Person { discoverable: boolean; bio?: string; avatar_path?: string | null; followers?: number; following?: number; photos?: number; stories?: number; joined?: string | null }
 export const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 export const cleanUsername = (raw: string) => raw.trim().replace(/^@/, '').toLowerCase();
 /** How a person is shown: their name, or @username when they haven't set a name. */
 export const labelOf = (p: Pick<Person, 'display_name' | 'username'>) => p.display_name || (p.username ? '@' + p.username : 'Someone');
+/** "Joined October 2026", or '' when the date is unknown. */
+export const joinedText = (iso?: string | null) => { const t = iso ? new Date(iso) : null; return t && !isNaN(+t) ? 'Joined ' + t.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : ''; };
 
 export async function myProfile(): Promise<MyProfile | null> {
   const u = me(); if (!u) return null;
@@ -418,14 +420,14 @@ async function cameraLeaderboardFresh(from: string, to: string): Promise<{ rows:
   const rows = [...tally.values()].map(t => ({ camera: t.camera, slug: t.slug, photos: t.photos, people: t.owners.size })).sort((a, b) => b.photos - a.photos || a.camera.localeCompare(b.camera));
   return { rows, partial };
 }
-export interface PublicCard { id: string; display_name: string; username: string | null; bio: string; avatar_path: string | null; photos: number; stories: number; followers: number; following: number }
+export interface PublicCard { id: string; display_name: string; username: string | null; bio: string; avatar_path: string | null; photos: number; stories: number; followers: number; following: number; joined: string | null }
 /** A name, bio and counts for a profile page. Works without signing in. */
 export async function publicCard(who: { code?: string; handle?: string; id?: string }): Promise<PublicCard | null> {
   if (!sb) return null;
   const { data, error } = await sb.rpc('profile_page', { code: who.code ?? null, handle: who.handle ? cleanUsername(who.handle) : null, uid: who.id ?? null });
   if (error) throw new Error(error.message);
   const r = (data ?? [])[0] as PublicCard | undefined;
-  return r ? { ...r, bio: r.bio ?? '', avatar_path: r.avatar_path ?? null, photos: Number(r.photos), stories: Number(r.stories), followers: Number(r.followers), following: Number(r.following) } : null;
+  return r ? { ...r, bio: r.bio ?? '', avatar_path: r.avatar_path ?? null, joined: r.joined ?? null, photos: Number(r.photos), stories: Number(r.stories), followers: Number(r.followers), following: Number(r.following) } : null;
 }
 
 // ---------- profile picture ----------
