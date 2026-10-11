@@ -1575,7 +1575,8 @@ function personRow(p: cloud.Person, action?: HTMLElement) {
   open.append(el('span', 'ava', initial(p)));
   const t = el('span', 'p-text'); t.append(el('b', '', cloud.labelOf(p)));
   if (p.username) t.append(el('small', '', '@' + p.username));
-  open.append(t); open.onclick = () => openProfile({ id: p.id });
+  // by username when there is one: a lookup by id only works for gallery members or people you follow
+  open.append(t); open.onclick = () => openProfile(p.username ? { handle: p.username } : { id: p.id });
   row.append(open); if (action) row.append(action);
   return row;
 }
