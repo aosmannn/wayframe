@@ -63,7 +63,9 @@ async function main() {
     rep.onclick = async () => { const why = prompt('What is wrong with this profile? A moderator will take a look.'); if (!why) return; try { await cloud.reportUser(id, why); rep.textContent = 'Reported. Thanks.'; rep.disabled = true; } catch { rep.textContent = 'Couldn’t send that'; } };
     act.append(f, rep);
   } else if (id) {
-    const a = el('a', 'btn primary', 'Sign in to follow'); a.href = '/app.html?account=1'; act.append(a);
+    // most visitors arrive from a shared link: the first thing to offer is a map of their own
+    const make = el('a', 'btn primary', 'Make your own map'); make.href = '/app.html';
+    const a = el('a', 'btn', 'Sign in to follow'); a.href = '/app.html?account=1'; act.append(make, a);
   }
   head.append(act);
   root.append(head);

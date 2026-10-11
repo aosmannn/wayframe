@@ -787,7 +787,23 @@ async function addFiles(files: File[], target: Card | null) {
   const missing = made.filter(c => !placed(c));
   const done = () => { if (made.length === 1) openCard(made[0]); else if (made.length) fitCards(made); };
   if (missing.length) openLocPrompt(missing, done); else done();
+  nudgeSave();
 }
+/** Guests keep photos only in this browser. Once their map has a few, offer to save it to an account (snoozed for a few days when closed). */
+const SAVE_SNOOZE = 'wayframe-save-nudge';
+function nudgeSave() {
+  const n = cards.filter(c => c.img).length;
+  if (signedIn || guestMode || !cloud.cloudEnabled || n < 3 || !$('inviteBanner').hidden) return;
+  let until = 0; try { until = Number(localStorage.getItem(SAVE_SNOOZE)) || 0; } catch { /* private window: just show it */ }
+  if (Date.now() < until) return;
+  $('saveText').textContent = `Your map has ${n} photos, saved only in this browser. Sign in with your email to keep them on every device and share your map.`;
+  $('saveBanner').hidden = false;
+}
+$('saveSignIn').onclick = () => { $('saveBanner').hidden = true; openAcct(); };
+$('saveDismiss').onclick = () => {
+  $('saveBanner').hidden = true;
+  try { localStorage.setItem(SAVE_SNOOZE, String(Date.now() + 3 * 864e5)); } catch { /* fine */ }
+};
 
 // ---- drag and drop ----
 const dropOverlay = $('dropOverlay');
@@ -1782,10 +1798,10 @@ async function onAuth(s: boolean) {
   if (!s) {
     syncing = false; me = null; friends = []; followers = []; friendCards = []; extraCards = []; blocked = new Set(); likeCache.clear(); hl = null; setPanelTab('stories');
     $('phoneForm').hidden = false; $('codeForm').hidden = true; offerPassword = false;
-    renderAcct(); render(); return;
+    renderAcct(); render(); nudgeSave(); return;
   }
   if (offerPassword && cloud.hasPassword()) offerPassword = false;   // they already have one
-  $('acctModal').hidden = offerPassword ? false : true; $('inviteBanner').hidden = true; $('guestBar').hidden = true; guestMode = false; extraCards = [];
+  $('acctModal').hidden = offerPassword ? false : true; $('inviteBanner').hidden = true; $('guestBar').hidden = true; $('saveBanner').hidden = true; guestMode = false; extraCards = [];
   showPasswordStatus();
   renderAcct();
   // Everything that doesn't depend on anything else starts at once, and photos show up as they arrive.
