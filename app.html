@@ -95,6 +95,11 @@
   <button id="inviteSignIn" class="btn small">Sign in to follow</button>
   <button id="inviteDismiss" class="btn small" aria-label="Dismiss">✕</button>
 </div>
+<div id="saveBanner" class="banner invite-banner" hidden>
+  <span id="saveText"></span>
+  <button id="saveSignIn" class="btn small primary">Save my map</button>
+  <button id="saveDismiss" class="btn small" aria-label="Not now">✕</button>
+</div>
 <div id="countryChip" class="banner country-chip" hidden>
   <span id="countryText"></span>
   <button id="countryFit" class="btn small">Zoom to fit</button>
@@ -427,7 +432,7 @@
     <p id="pfBio" class="ig-bio" hidden></p>
     <div id="pfStats" class="ig-stats"></div>
     <p id="pfMutual" class="mutual" hidden></p>
-    <div class="row"><button id="pfFollow" class="btn primary">Follow</button><button id="pfMap" class="btn" hidden>Show on map</button><span id="pfFollowsYou" class="pill" hidden>Follows you</span></div>
+    <div class="row"><button id="pfFollow" class="btn primary">Follow</button><button id="pfMap" class="btn" hidden>Show on map</button><a id="pfPage" class="btn" hidden>Full profile</a><span id="pfFollowsYou" class="pill" hidden>Follows you</span></div>
     <div id="pfSummary" class="px-summary" hidden></div>
     <div id="pfHighlights" hidden></div>
     <h3>Stories</h3>

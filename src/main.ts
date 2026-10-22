@@ -796,7 +796,23 @@ async function addFiles(files: File[], target: Card | null) {
   const missing = made.filter(c => !placed(c));
   const done = () => { if (made.length === 1) openCard(made[0]); else if (made.length) fitCards(made); };
   if (missing.length) openLocPrompt(missing, done); else done();
+  nudgeSave();
 }
+/** Guests keep photos only in this browser. Once their map has a few, offer to save it to an account (snoozed for a few days when closed). */
+const SAVE_SNOOZE = 'wayframe-save-nudge';
+function nudgeSave() {
+  const n = cards.filter(c => c.img).length;
+  if (signedIn || guestMode || !cloud.cloudEnabled || n < 3 || !$('inviteBanner').hidden) return;
+  let until = 0; try { until = Number(localStorage.getItem(SAVE_SNOOZE)) || 0; } catch { /* private window: just show it */ }
+  if (Date.now() < until) return;
+  $('saveText').textContent = `Your map has ${n} photos, saved only in this browser. Sign in with your email to keep them on every device and share your map.`;
+  $('saveBanner').hidden = false;
+}
+$('saveSignIn').onclick = () => { $('saveBanner').hidden = true; openAcct(); };
+$('saveDismiss').onclick = () => {
+  $('saveBanner').hidden = true;
+  try { localStorage.setItem(SAVE_SNOOZE, String(Date.now() + 3 * 864e5)); } catch { /* fine */ }
+};
 
 // ---- drag and drop ----
 const dropOverlay = $('dropOverlay');
@@ -1584,7 +1600,8 @@ function personRow(p: cloud.Person, action?: HTMLElement) {
   open.append(el('span', 'ava', initial(p)));
   const t = el('span', 'p-text'); t.append(el('b', '', cloud.labelOf(p)));
   if (p.username) t.append(el('small', '', '@' + p.username));
-  open.append(t); open.onclick = () => openProfile({ id: p.id });
+  // by username when there is one: a lookup by id only works for gallery members or people you follow
+  open.append(t); open.onclick = () => openProfile(p.username ? { handle: p.username } : { id: p.id });
   row.append(open); if (action) row.append(action);
   return row;
 }
@@ -1647,7 +1664,10 @@ async function openProfile(who: { id?: string; handle?: string; code?: string })
   profileOf = prof;
   $('acctModal').hidden = true; $('profileModal').hidden = false;
   avaInto($('pfAva'), initial(prof), prof.avatar_path);
-  $('pfName').textContent = cloud.labelOf(prof); $('pfHandle').textContent = prof.username ? '@' + prof.username : '';
+  $('pfName').textContent = cloud.labelOf(prof); $('pfHandle').textContent = [prof.username ? '@' + prof.username : '', cloud.joinedText(prof.joined)].filter(Boolean).join(' · ');
+  // the full page opens by username; without one, only people in the gallery or with public photos can be opened by id
+  const page = $('pfPage') as HTMLAnchorElement; page.hidden = !(prof.username || prof.photos);
+  page.href = '/u/' + (prof.username || prof.id);
   $('pfBio').textContent = prof.bio ?? ''; $('pfBio').hidden = !prof.bio;
   $('pfStats').innerHTML = ''; for (const [n, one, many] of [[prof.photos, 'photo', 'photos'], [prof.stories, 'story', 'stories'], [prof.followers, 'follower', 'followers'], [prof.following, 'following', 'following']] as const) { if (n === undefined) continue; const s = el('span'); s.append(el('b', '', String(n)), ' ' + (n === 1 ? one : many)); $('pfStats').append(s); }
   drawSummary($('pfSummary'), null); drawHighlights($('pfHighlights'), [], () => {});
@@ -1701,7 +1721,7 @@ async function drawProfileStories(prof: cloud.Profile, mine: boolean) {
       for (const c of pub.cards) if (c.trip) (m2.get(c.trip) ?? m2.set(c.trip, []).get(c.trip)!).push(c);
       list = [...m2.entries()].map(([name, cs]) => ({ name, owner: prof.id, cards: cs.sort((a, b) => a.seq - b.seq) }));
     } catch { list = []; }
-    if (!list.length) { box.append(el('p', 'hint', `${cloud.labelOf(prof)} hasn’t made any stories public. Follow them to see what they share with friends.`)); return; }
+    if (!list.length) { box.append(el('p', 'hint', `${cloud.labelOf(prof)} hasn’t pinned any public stories yet. Follow them to see what they share with friends.`)); return; }
     box.append(el('p', 'hint', 'Public stories. Follow to see what they share with friends too.'));
   }
   if (!list.length) { box.append(el('p', 'hint', mine ? 'Nothing shared yet. Set a story to Friends or Public.' : 'Nothing shared yet.')); return; }
@@ -1787,10 +1807,10 @@ async function onAuth(s: boolean) {
   if (!s) {
     syncing = false; me = null; friends = []; followers = []; friendCards = []; extraCards = []; blocked = new Set(); likeCache.clear(); hl = null; setPanelTab('stories');
     $('phoneForm').hidden = false; $('codeForm').hidden = true; offerPassword = false;
-    renderAcct(); render(); return;
+    renderAcct(); render(); nudgeSave(); return;
   }
   if (offerPassword && cloud.hasPassword()) offerPassword = false;   // they already have one
-  $('acctModal').hidden = offerPassword ? false : true; $('inviteBanner').hidden = true; $('guestBar').hidden = true; guestMode = false; extraCards = [];
+  $('acctModal').hidden = offerPassword ? false : true; $('inviteBanner').hidden = true; $('guestBar').hidden = true; $('saveBanner').hidden = true; guestMode = false; extraCards = [];
   showPasswordStatus();
   renderAcct();
   // Everything that doesn't depend on anything else starts at once, and photos show up as they arrive.
