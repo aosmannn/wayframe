@@ -737,6 +737,8 @@ body.timeline #tray, body.timeline .stories-show { display: none; }
 .empty-state.has-photos { padding: 6px; }
 .empty-state.has-photos h2, .empty-state.has-photos .empty-x { display: none; }
 body:has(.tray:not([hidden])) .empty-state { bottom: 150px; }   /* photos not on the map yet sit at the very bottom */
+/* phones: too narrow to centre it, so it starts at the left and stops short of the zoom buttons */
+@media (max-width: 560px) { .empty-state { left: 16px; transform: none; max-width: calc(100% - 84px); } }
 .empty-state .btn.primary:hover { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 32%, transparent), 0 4px 18px color-mix(in srgb, var(--accent) 45%, transparent); }
 
 /* ---------- panels slide in and out, banners fade down ---------- */
