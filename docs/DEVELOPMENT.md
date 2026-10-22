@@ -202,3 +202,10 @@ Who can like or comment on a photo is decided in the database by `can_see_photo(
 ## The Stories / Friends / Travel panel
 
 The tabs have the whole top row. "New story" (and its name box) sits at the bottom of the panel and only shows on the Stories tab. Switching tabs eases the new list in, and a pen-stroke underline (`.st-scribble`, built in `setPanelTab` in `src/main.ts`) slides under the chosen tab and draws itself. The Been / Bucket list toggle inside Travel eases its list in too. Reduced motion turns the movement off.
+
+## The header: logo menu, Gallery and Map style
+
+- The logo is a drop-down (`#brandMenu`): it opens on hover, keyboard focus or tap (phones), with a caret that flips, and holds Stories, Cameras, Travel timeline, Make a poster and the backup buttons. Gallery and Map style sit in the header itself; below 720 px wide there is no room, so they move into the logo menu (`.only-narrow`).
+- Map style (`#styleMenu`) is the same kind of drop-down. `themeSel` stays as a plain select inside the logo menu for narrow screens and is what the poster code reads. `setMapStyle` in `src/main.ts` keeps all three in step and remembers the choice (`wf-theme`).
+- The header stays on one row at every width: the search bar shrinks with the page, and below 520 px the wordmark hides so the search still fits.
+- Header and bottom controls have a thin white ring (`--ring`) so they stand out on the colorful map, and buttons light up on hover (`--glow`). Reduced motion turns the menu animation off.
